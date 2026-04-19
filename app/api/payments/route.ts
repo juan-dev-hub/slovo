@@ -45,42 +45,35 @@ export async function POST(req: NextRequest) {
 
     if (!wompiResponse.ok) {
       const errText = await wompiResponse.text()
-      console.error('Wompi error:', wompiResponse.status, errText)
-
-      // Fallback: construir URL de checkout directamente con query params
-      const checkoutUrl = buildWompiCheckoutUrl({ appId, pkg, reference, appUrl })
-      return NextResponse.json({ checkoutUrl, reference })
+      console.error('[Wompi] API error:', wompiResponse.status, errText)
+      return NextResponse.json(
+        { error: `Wompi rechazó la solicitud (${wompiResponse.status}): ${errText}` },
+        { status: 502 }
+      )
     }
 
     const data = await wompiResponse.json()
+    console.log('[Wompi] API response:', JSON.stringify(data))
+
     const checkoutUrl =
       data?.Data?.Url ||
       data?.Data?.url ||
+      data?.Data?.UrlCheckout ||
       data?.url ||
       data?.checkout_url ||
-      buildWompiCheckoutUrl({ appId, pkg, reference, appUrl })
+      null
+
+    if (!checkoutUrl) {
+      console.error('[Wompi] No checkout URL found in response:', JSON.stringify(data))
+      return NextResponse.json(
+        { error: 'Wompi no retornó una URL de pago. Revisa los logs del servidor.' },
+        { status: 502 }
+      )
+    }
 
     return NextResponse.json({ checkoutUrl, reference })
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'Error procesando pago' }, { status: 500 })
   }
-}
-
-function buildWompiCheckoutUrl(params: {
-  appId: string
-  pkg: { price: number; credits: number; label: string }
-  reference: string
-  appUrl: string
-}) {
-  const { appId, pkg, reference, appUrl } = params
-  const base = 'https://checkout.wompi.sv/p/'
-  const search = new URLSearchParams({
-    'public-key': appId,
-    currency: 'USD',
-    'amount-in-cents': String(pkg.price * 100),
-    reference,
-    'redirect-url': `${appUrl}/dashboard?payment=success`,
-  })
-  return `${base}?${search.toString()}`
 }
