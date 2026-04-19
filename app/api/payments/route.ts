@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Buffer.from(`${appId}:${apiSecret}`).toString('base64')}`,
+        'Authorization': `Basic ${Buffer.from(`${appId}:${apiSecret}`).toString('base64')}`,
       },
       body: JSON.stringify({
         NombreProducto: `${pkg.credits} Créditos — SLOVO AI`,
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       console.error('Wompi error:', wompiResponse.status, errText)
 
       // Fallback: construir URL de checkout directamente con query params
-      const checkoutUrl = buildWompiCheckoutUrl({ appId, pkg, reference, appUrl, userId })
+      const checkoutUrl = buildWompiCheckoutUrl({ appId, pkg, reference, appUrl })
       return NextResponse.json({ checkoutUrl, reference })
     }
 
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       data?.Data?.url ||
       data?.url ||
       data?.checkout_url ||
-      buildWompiCheckoutUrl({ appId, pkg, reference, appUrl, userId })
+      buildWompiCheckoutUrl({ appId, pkg, reference, appUrl })
 
     return NextResponse.json({ checkoutUrl, reference })
   } catch (err) {
@@ -72,9 +72,8 @@ function buildWompiCheckoutUrl(params: {
   pkg: { price: number; credits: number; label: string }
   reference: string
   appUrl: string
-  userId: string
 }) {
-  const { appId, pkg, reference, appUrl, userId } = params
+  const { appId, pkg, reference, appUrl } = params
   const base = 'https://checkout.wompi.sv/p/'
   const search = new URLSearchParams({
     'public-key': appId,
