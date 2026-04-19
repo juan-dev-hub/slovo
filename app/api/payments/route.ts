@@ -17,7 +17,6 @@ export async function POST(req: NextRequest) {
     const pkg = CREDIT_PACKAGES.find(p => p.credits === credits)
     if (!pkg) return NextResponse.json({ error: 'Paquete inválido' }, { status: 400 })
 
-    const appId = process.env.WOMPI_APP_ID!
     const apiSecret = process.env.WOMPI_API_SECRET!
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     const reference = `${userId}-${credits}-${Date.now()}`
@@ -27,7 +26,7 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${Buffer.from(`${appId}:${apiSecret}`).toString('base64')}`,
+        'Authorization': `Bearer ${apiSecret}`,
       },
       body: JSON.stringify({
         NombreProducto: `${pkg.credits} Créditos — SLOVO AI`,
