@@ -76,7 +76,17 @@ export async function generateSalesScript(inputs: {
   canal: string
   objecion: string
 }): Promise<ScriptSections> {
-  const prompt = `Eres un experto en copywriting de ventas de alto nivel. Tu trabajo es generar scripts de ventas EXTREMADAMENTE persuasivos usando la estructura de 7 pasos estilo Alex Hormozi, pero INFUNDIDA con la psicología Straight Line Persuasion de Jordan Belfort.
+  const prompt = `Eres un experto mundial en copywriting de ventas estilo Alex Hormozi.
+Tu trabajo es crear scripts de ventas extremadamente persuasivos, directos, naturales y agresivos para vendedores hispanohablantes en El Salvador y LATAM.
+
+Reglas estrictas:
+- Habla como un vendedor callejero inteligente, no como un profesor o un comercial de TV.
+- Usa lenguaje directo, crudo y emocional. Evita palabras vacías como "significativa", "de repente", "manera sustancial".
+- Sé muy específico con números, ejemplos reales y dolores.
+- Estructura obligatoria: 1. GANCHO fuerte, 2. PROBLEMA profundo, 3. SOLUCIÓN, 4. PRUEBA social creíble, 5. OFERTA clara, 6. CIERRE fuerte con pregunta, 7. MANEJO DE OBJECIÓN en bucle (genera al menos tres respuestas para objeciones que podrían aparecer, generando una línea recta estilo Jordan Belfort).
+- Haz que suene como si un vendedor top lo estuviera diciendo por WhatsApp o llamada.
+- El tono debe ser de autoridad, confianza y urgencia, nunca suave ni educado.
+- Usa contracciones (estás, tienes, vas a, etc.) y lenguaje latino natural.
 
 Información del producto:
 - Producto/servicio: ${inputs.producto}
@@ -87,44 +97,7 @@ Información del producto:
 - Canal de venta: ${inputs.canal}
 - Objeción principal del cliente: ${inputs.objecion}
 
-Reglas obligatorias para cada sección:
-
-1. GANCHO (máximo 1-2 frases)
-   - Debe ser una pregunta o afirmación que golpee directo el dolor más grande del cliente.
-   - Haz que duela emocional y financieramente.
-
-2. PROBLEMA (agitación fuerte)
-   - Agita el dolor al máximo: describe consecuencias reales, emocionales y de dinero.
-   - Usa lenguaje conversacional, directo y crudo (como si hablaras con un amigo).
-   - Haz que el prospecto piense "¡exacto, eso me pasa a mí!".
-
-3. SOLUCIÓN
-   - Presenta la solución con certeza absoluta.
-   - Usa frases de futuro pacing: "Imagina…", "Ahora vas a poder…", "De repente…".
-   - Enfócate en el resultado que el cliente va a VIVIR, no en características.
-
-4. PRUEBA
-   - Historia específica con números reales (dinero ahorrado, tiempo, resultados).
-   - Hazla creíble y relatable.
-
-5. OFERTA
-   - Apila valor (Hormozi style): precio + lo que realmente obtiene + beneficios extras.
-   - Enfatiza que es una inversión inteligente y que está pagando poco por mucho.
-
-6. CIERRE (Straight Line)
-   - Cierre directo y en línea recta: lleva al "sí" sin dar opción a pensar.
-   - Pregunta de control o pregunta de cierre claro.
-
-7. MANEJO DE OBJECIÓN
-   - Anticipa la objeción más común y la destroza con una contra-pregunta poderosa que vuelva a llevar al sí.
-
-Estilo general:
-- Lenguaje natural, conversacional y de alto impacto (nada robótico).
-- Crea urgencia y certeza en todo momento.
-- El prospecto debe sentir que "esto es exactamente lo que necesito" y "tengo que actuar ya".
-- Mantén el formato numerado exacto: 1. GANCHO, 2. PROBLEMA, etc.
-
-Genera el script completo siguiendo esta estructura y reglas.`
+Genera el script completo con los 7 puntos numerados y títulos en mayúsculas. Formato obligatorio: 1. GANCHO, 2. PROBLEMA, 3. SOLUCIÓN, 4. PRUEBA, 5. OFERTA, 6. CIERRE, 7. MANEJO DE OBJECIÓN`
 
   const completion = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
