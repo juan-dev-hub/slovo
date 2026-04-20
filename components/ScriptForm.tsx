@@ -50,6 +50,10 @@ export function ScriptForm({ onScriptGenerated }: ScriptFormProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const filledCount = Object.values(form).filter(v => v.trim() !== '').length
+  const totalFields = Object.keys(form).length
+  const isComplete = filledCount === totalFields
+
   function set(field: keyof FormData) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
       setForm(prev => ({ ...prev, [field]: e.target.value }))
@@ -180,12 +184,28 @@ export function ScriptForm({ onScriptGenerated }: ScriptFormProps) {
             </motion.div>
           )}
 
-          <motion.div variants={itemVariants} className="md:col-span-2">
+          <motion.div variants={itemVariants} className="md:col-span-2 space-y-3">
+            {!isComplete && (
+              <div className="flex items-center justify-between text-xs text-white/50 px-1">
+                <span>Completa todos los campos para generar</span>
+                <span className="font-bold text-white/70">{filledCount}/{totalFields}</span>
+              </div>
+            )}
+            <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${(filledCount / totalFields) * 100}%`,
+                  background: isComplete ? '#22d3ee' : '#6366f1',
+                }}
+              />
+            </div>
             <Button
               type="submit"
               size="lg"
               loading={loading}
-              className="w-full"
+              disabled={!isComplete}
+              className="w-full disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading ? 'Generando script...' : '⚡ Generar Script de Ventas'}
             </Button>
