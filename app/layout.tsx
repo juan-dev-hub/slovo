@@ -15,8 +15,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <ClerkProvider>
       <html lang="es" className="dark">
-        <body className={`${inter.className} bg-bg min-h-screen`}>
-          {children}
+        <body className={`${inter.className} bg-bg min-h-screen flex flex-col`}>
+          <main className="flex-1">{children}</main>
+          <footer className="border-t border-white/10 py-4 px-6">
+            <div className="max-w-5xl mx-auto flex flex-wrap justify-center gap-x-6 gap-y-1 text-xs text-white/30">
+              <a href="/conditions" className="hover:text-white/60 transition-colors">Términos de servicio</a>
+              <a href="/privacy" className="hover:text-white/60 transition-colors">Política de privacidad</a>
+              <a href="/refunds" className="hover:text-white/60 transition-colors">Política de reembolso</a>
+              <span>© {new Date().getFullYear()} SLOVO AI</span>
+            </div>
+          </footer>
         </body>
       </html>
     </ClerkProvider>

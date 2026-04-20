@@ -3,27 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { CREDIT_PACKAGES } from '@/lib/utils'
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
-function paypalBase() {
-  return process.env.PAYPAL_MODE === 'live'
-    ? 'https://api-m.paypal.com'
-    : 'https://api-m.sandbox.paypal.com'
-}
-
-async function getAccessToken() {
-  const base = paypalBase()
-  const res = await fetch(`${base}/v1/oauth2/token`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': `Basic ${Buffer.from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`).toString('base64')}`,
-    },
-    body: 'grant_type=client_credentials',
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(`PayPal auth error: ${JSON.stringify(data)}`)
-  return data.access_token as string
-}
-
 export async function POST(req: NextRequest) {
   const { userId } = auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -39,44 +18,43 @@ export async function POST(req: NextRequest) {
     if (!pkg) return NextResponse.json({ error: 'Paquete inválido' }, { status: 400 })
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const accessToken = await getAccessToken()
+    const orderId = `${userId}|${pkg.credits}|${Date.now()}`
 
-    const orderRes = await fetch(`${paypalBase()}/v2/checkout/orders`, {
+    const invoiceRes = await fetch('https://api.nowpayments.io/v1/invoice', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
+        'x-api-key': process.env.NOWPAYMENTS_API_KEY!,
       },
       body: JSON.stringify({
-        intent: 'CAPTURE',
-        purchase_units: [{
-          amount: { currency_code: 'USD', value: pkg.price.toFixed(2) },
-          description: `${pkg.credits} Créditos — SLOVO AI`,
-          custom_id: `${userId}|${pkg.credits}`,
-        }],
-        application_context: {
-          brand_name: 'SLOVO AI',
-          user_action: 'PAY_NOW',
-          return_url: `${appUrl}/api/payments/capture`,
-          cancel_url: `${appUrl}/dashboard?payment=cancelled`,
-        },
+        price_amount: pkg.price,
+        price_currency: 'usd',
+        order_id: orderId,
+        order_description: `${pkg.credits} Créditos — SLOVO AI`,
+        ipn_callback_url: `${appUrl}/api/nowpayments-webhook`,
+        success_url: `${appUrl}/dashboard?payment=success`,
+        cancel_url: `${appUrl}/dashboard?payment=cancelled`,
+        is_fixed_rate: false,
+        is_fee_paid_by_user: false,
       }),
     })
 
-    const order = await orderRes.json()
-    if (!orderRes.ok) {
-      console.error('[PayPal] Create order error:', JSON.stringify(order))
-      return NextResponse.json({ error: 'Error al crear el pago con PayPal' }, { status: 502 })
+    const invoice = await invoiceRes.json()
+
+    if (!invoiceRes.ok) {
+      console.error('[NowPayments] Invoice error:', JSON.stringify(invoice))
+      return NextResponse.json({ error: 'Error al crear el pago' }, { status: 502 })
     }
 
-    const approveUrl = order.links?.find((l: any) => l.rel === 'approve')?.href
-    if (!approveUrl) {
-      return NextResponse.json({ error: 'PayPal no retornó URL de aprobación' }, { status: 502 })
+    const checkoutUrl = invoice.invoice_url
+    if (!checkoutUrl) {
+      console.error('[NowPayments] No invoice_url in response:', JSON.stringify(invoice))
+      return NextResponse.json({ error: 'No se recibió URL de pago' }, { status: 502 })
     }
 
-    return NextResponse.json({ checkoutUrl: approveUrl })
+    return NextResponse.json({ checkoutUrl })
   } catch (err) {
-    console.error('[PayPal]', err)
+    console.error('[NowPayments]', err)
     return NextResponse.json({ error: 'Error procesando pago' }, { status: 500 })
   }
 }
