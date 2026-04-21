@@ -29,9 +29,9 @@ async function buildNowPaymentsUrl(pkg: typeof CREDIT_PACKAGES[number], userId: 
 }
 
 function buildMoonPayUrl(pkg: typeof CREDIT_PACKAGES[number], userId: string, appUrl: string) {
-  const pubKey = process.env.MOONPAY_PUBLISHABLE_KEY
+  const pubKey = process.env.NEXT_PUBLIC_MOONPAY_PUBLISHABLE_KEY || process.env.MOONPAY_PUBLISHABLE_KEY
   const secretKey = process.env.MOONPAY_SECRET_KEY
-  if (!pubKey || !secretKey) throw new Error('MoonPay: faltan MOONPAY_PUBLISHABLE_KEY o MOONPAY_SECRET_KEY en Vercel')
+  if (!pubKey || !secretKey) throw new Error('MoonPay: faltan NEXT_PUBLIC_MOONPAY_PUBLISHABLE_KEY o MOONPAY_SECRET_KEY en Vercel')
 
   const orderId = `${userId}|${pkg.credits}|${Date.now()}`
   const params = new URLSearchParams({
