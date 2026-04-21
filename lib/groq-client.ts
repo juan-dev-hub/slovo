@@ -53,7 +53,7 @@ function parseScriptSections(text: string): ScriptSections {
     const key = keyFromLine(trimmed)
     if (key) {
       currentKey = key
-      sections[key] = []
+      if (!sections[key]) sections[key] = []
       continue
     }
 
