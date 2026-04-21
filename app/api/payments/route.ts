@@ -94,7 +94,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ checkoutUrl })
   } catch (err) {
-    console.error('[Payments]', err)
-    return NextResponse.json({ error: 'Error procesando pago' }, { status: 500 })
+    const msg = err instanceof Error ? err.message : 'Error procesando pago'
+    console.error('[Payments]', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
