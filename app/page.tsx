@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { ParticleBackground } from '@/components/ParticleBackground'
+import { Footer } from '@/components/Footer'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { CREDIT_PACKAGES } from '@/lib/utils'
@@ -137,6 +138,13 @@ export default function LandingPage() {
               </div>
               <span className="font-bold text-lg bg-gradient-to-r from-electric to-aqua bg-clip-text text-transparent">SLOVO AI</span>
             </div>
+
+            <div className="hidden md:flex items-center gap-1">
+              <Link href="/conditions" className="px-3 py-1.5 rounded-lg text-xs font-medium text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200">Términos</Link>
+              <Link href="/privacy"    className="px-3 py-1.5 rounded-lg text-xs font-medium text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200">Privacidad</Link>
+              <Link href="/refunds"    className="px-3 py-1.5 rounded-lg text-xs font-medium text-white/60 hover:text-white hover:bg-white/10 transition-all duration-200">Reembolsos</Link>
+            </div>
+
             <div className="flex items-center gap-3">
               <SignedIn>
                 <Link href="/dashboard">
@@ -443,12 +451,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-white/10 py-8 px-4 text-center">
-        <p className="text-white/30 text-sm">
-          © {new Date().getFullYear()} SLOVO AI · Hecho para vendedores que no se conforman con mediocre
-        </p>
-      </footer>
+      <div className="relative z-10">
+        <Footer />
+      </div>
     </div>
   )
 }
