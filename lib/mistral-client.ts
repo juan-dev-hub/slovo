@@ -1,4 +1,4 @@
-import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from '@google/genai'
+import Mistral from '@mistralai/mistralai'
 
 export interface ScriptSections {
   gancho: string
@@ -39,9 +39,8 @@ function stripMarkdown(s: string): string {
 }
 
 function parseScriptSections(text: string): ScriptSections {
-  console.log('[Gemini raw output]\n', text.slice(0, 500))
+  console.log('[Mistral raw output]\n', text.slice(0, 500))
 
-  // Split into Version 1 (structured) and Version 2 (spoken)
   const v2Re = /VERSI[OÓ]N\s*2[:\-\s]*/i
   const v2Match = text.search(v2Re)
   const v1Text = v2Match > 0 ? text.slice(0, v2Match) : text
@@ -55,8 +54,6 @@ function parseScriptSections(text: string): ScriptSections {
   for (const rawLine of v1Text.split('\n')) {
     const trimmed = rawLine.trim()
     if (!trimmed) continue
-
-    // Skip version headers like "VERSIÓN 1: SCRIPT ESTRUCTURADO"
     if (/VERSI[OÓ]N\s*1/i.test(trimmed)) continue
 
     const key = keyFromLine(trimmed)
@@ -85,25 +82,6 @@ function parseScriptSections(text: string): ScriptSections {
   }
 }
 
-const TONO_DESC: Record<string, string> = {
-  agresivo: 'Directo, sin filtros, confrontativo. Presiona sin disculparse.',
-  medio: 'Firme pero amigable. Directo sin ser ofensivo.',
-  suave: 'Empático y consultivo. Guía sin presionar.',
-}
-
-const CLIENTE_DESC: Record<string, string> = {
-  escéptico: 'No cree en promesas. Necesita lógica y prueba antes de moverse.',
-  degen: 'Tolerante al riesgo, busca upside rápido, habla el lenguaje cripto/trading.',
-  corporativo: 'Formal, evalúa ROI, necesita validación institucional.',
-}
-
-const HYPE_DESC = (n: number) =>
-  n <= 3
-    ? 'Nivel de hype bajo: sin afirmaciones grandiosas, solo hechos y lógica.'
-    : n <= 6
-    ? 'Nivel de hype moderado: energía controlada, alguna emoción pero basada en datos.'
-    : 'Nivel de hype alto: energía máxima, urgencia real, lenguaje de oportunidad única.'
-
 export async function generateSalesScript(inputs: {
   producto: string
   nicho: string
@@ -119,12 +97,7 @@ export async function generateSalesScript(inputs: {
   nivelHype: number
   tipoCliente: string
 }): Promise<ScriptSections> {
-  const objecionPrincipal = inputs.objeciones[0] || ''
   const objecionesFormateadas = inputs.objeciones.map((o, i) => `${i + 1}. ${o}`).join('\n')
-
-  const tonoDesc = TONO_DESC[inputs.tono] || TONO_DESC['medio']
-  const clienteDesc = CLIENTE_DESC[inputs.tipoCliente] || CLIENTE_DESC['escéptico']
-  const hypeDesc = HYPE_DESC(inputs.nivelHype)
 
   const prompt = `Eres Jordan Belfort entrenando a un vendedor real. Genera un script usando el sistema Straight Line Persuasion.
 
@@ -180,23 +153,15 @@ REGLA CRÍTICA: NUNCA digas que un competidor es malo, estafa, timo, o ilegal. S
 VERSIÓN 2: VERSIÓN HABLADA
 El script completo en lenguaje conversacional real. Como si estuvieras en una llamada o cara a cara. Fluido, con pausas marcadas con [pausa]. Incluye las 3 preguntas de rapport, apertura, presentación, prueba, manejo de cada objeción y cierre duro. El vendedor debe poder leerlo y decir: "así es exactamente como yo hablaría."`
 
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
+  const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY! })
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-1.5-flash',
-    contents: prompt,
-    config: {
-      temperature: 0.8,
-      maxOutputTokens: 4500,
-      safetySettings: [
-        { category: HarmCategory.HARM_CATEGORY_HARASSMENT,        threshold: HarmBlockThreshold.BLOCK_NONE },
-        { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,       threshold: HarmBlockThreshold.BLOCK_NONE },
-        { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
-        { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-      ],
-    },
+  const response = await client.chat.complete({
+    model: 'mistral-large-latest',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.8,
+    maxTokens: 4500,
   })
 
-  const text = response.text ?? ''
+  const text = (response.choices?.[0]?.message?.content as string) ?? ''
   return parseScriptSections(text)
 }

@@ -175,7 +175,7 @@ export default function LandingPage() {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-electric/10 border border-electric/30 text-electric text-sm font-medium mb-8"
         >
           <span className="w-2 h-2 rounded-full bg-electric animate-pulse" />
-          Powered by Gemini 2.0 Flash
+          Powered by Mistral Large
         </motion.div>
 
         <motion.h1
