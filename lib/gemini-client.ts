@@ -183,7 +183,7 @@ El script completo en lenguaje conversacional real. Como si estuvieras en una ll
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash',
+    model: 'gemini-1.5-flash',
     contents: prompt,
     config: {
       temperature: 0.8,
