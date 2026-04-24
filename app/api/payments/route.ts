@@ -17,7 +17,7 @@ async function buildNowPaymentsUrl(pkg: typeof CREDIT_PACKAGES[number], userId: 
       order_id: orderId,
       order_description: `${pkg.credits} Créditos — SLOVO AI`,
       ipn_callback_url: `${appUrl}/api/nowpayments-webhook`,
-      success_url: `${appUrl}/dashboard?payment=success`,
+      success_url: `${appUrl}/payment-done`,
       cancel_url: `${appUrl}/dashboard?payment=cancelled`,
       is_fixed_rate: false,
       is_fee_paid_by_user: false,

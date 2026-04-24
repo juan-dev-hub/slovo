@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Button } from './ui/Button'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface NavbarProps {
   credits?: number
@@ -12,16 +13,17 @@ interface NavbarProps {
 
 export function Navbar({ credits }: NavbarProps) {
   const pathname = usePathname()
+  const { lang, setLang, t } = useLanguage()
 
   const links = [
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/referidos', label: 'Referidos' },
+    { href: '/dashboard', label: t.dashboard },
+    { href: '/referidos', label: t.referrals },
   ]
 
   const legalLinks = [
-    { href: '/conditions', label: 'Términos' },
-    { href: '/privacy', label: 'Privacidad' },
-    { href: '/refunds', label: 'Reembolsos' },
+    { href: '/conditions', label: t.terms },
+    { href: '/privacy', label: t.privacy },
+    { href: '/refunds', label: t.refunds },
   ]
 
   return (
@@ -86,6 +88,15 @@ export function Navbar({ credits }: NavbarProps) {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Language toggle */}
+            <button
+              onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
+              className="px-2.5 py-1 rounded-lg border border-white/20 text-white/60 hover:text-white hover:border-white/40 text-xs font-bold transition-all duration-200"
+              title={lang === 'es' ? 'Switch to English' : 'Cambiar a Español'}
+            >
+              {lang === 'es' ? 'EN' : 'ES'}
+            </button>
+
             <SignedIn>
               {credits !== undefined && (
                 <motion.div
@@ -103,7 +114,7 @@ export function Navbar({ credits }: NavbarProps) {
             </SignedIn>
             <SignedOut>
               <SignInButton mode="modal">
-                <Button size="sm">Iniciar sesión</Button>
+                <Button size="sm">{t.signIn}</Button>
               </SignInButton>
             </SignedOut>
           </div>

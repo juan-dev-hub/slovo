@@ -1,45 +1,86 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Card } from './ui/Card'
 import { Button } from './ui/Button'
 import { CREDIT_PACKAGES } from '@/lib/utils'
-
-type Provider = 'nowpayments' | 'moonpay' | 'helio'
-
-const PROVIDERS: { id: Provider; label: string; desc: string }[] = [
-  { id: 'nowpayments', label: '🪙 Crypto', desc: '+300 criptos' },
-  { id: 'moonpay',    label: '💳 Tarjeta',  desc: 'Visa / Mastercard' },
-  { id: 'helio',      label: '◎ Solana',   desc: 'USDC / SOL' },
-]
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface CreditPackagesProps {
-  onSuccess?: () => void
+  onSuccess?: (newCredits: number) => void
+  onToast?: (msg: string) => void
 }
 
-export function CreditPackages({ onSuccess }: CreditPackagesProps) {
-  const [provider, setProvider] = useState<Provider>('nowpayments')
+export function CreditPackages({ onSuccess, onToast }: CreditPackagesProps) {
+  const { t } = useLanguage()
   const [loading, setLoading] = useState<number | null>(null)
   const [error, setError] = useState('')
+  const popupRef = useRef<Window | null>(null)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const baseCreditsRef = useRef<number | null>(null)
+
+  // Listen for payment_complete message from popup
+  useEffect(() => {
+    function onMessage(e: MessageEvent) {
+      if (e.origin !== window.location.origin) return
+      if (e.data === 'payment_complete') stopPolling()
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [])
+
+  function stopPolling() {
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
+    if (popupRef.current && !popupRef.current.closed) popupRef.current.close()
+    setLoading(null)
+  }
+
+  function startPolling(baseCredits: number) {
+    baseCreditsRef.current = baseCredits
+    pollRef.current = setInterval(async () => {
+      // Stop if popup was closed manually
+      if (popupRef.current?.closed) { stopPolling(); return }
+      try {
+        const res = await fetch('/api/credits')
+        if (!res.ok) return
+        const { credits } = await res.json()
+        if (credits > (baseCreditsRef.current ?? credits)) {
+          stopPolling()
+          onToast?.(t.thankYouPurchase)
+          onSuccess?.(credits)
+        }
+      } catch { /* ignore */ }
+    }, 3000)
+  }
 
   async function handlePurchase(credits: number) {
     setLoading(credits)
     setError('')
     try {
+      // Snapshot current credits before payment
+      const creditRes = await fetch('/api/credits')
+      const { credits: currentCredits } = creditRes.ok ? await creditRes.json() : { credits: 0 }
+
       const res = await fetch('/api/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credits, provider }),
+        body: JSON.stringify({ credits, provider: 'nowpayments' }),
       })
-
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Error al crear el pago')
+      if (!res.ok) throw new Error(data.error || t.paymentError)
 
-      if (data.checkoutUrl) {
+      const popup = window.open(
+        data.checkoutUrl,
+        'nowpayments_checkout',
+        'width=820,height=700,left=200,top=100,resizable=yes,scrollbars=yes'
+      )
+      if (!popup) {
+        // Popup blocked — fall back to redirect
         window.location.href = data.checkoutUrl
-      } else {
-        throw new Error('No se recibió URL de pago')
+        return
       }
+      popupRef.current = popup
+      startPolling(currentCredits)
     } catch (err: any) {
       setError(err.message)
       setLoading(null)
@@ -48,27 +89,13 @@ export function CreditPackages({ onSuccess }: CreditPackagesProps) {
 
   return (
     <div className="space-y-5">
-      {/* Payment method selector */}
-      <div className="flex gap-2 p-1 bg-white/5 rounded-xl border border-white/10">
-        {PROVIDERS.map(p => (
-          <button
-            key={p.id}
-            onClick={() => setProvider(p.id)}
-            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 text-center relative ${
-              provider === p.id
-                ? 'bg-white/15 text-white shadow'
-                : 'text-white/50 hover:text-white/80'
-            }`}
-          >
-            <div>{p.label}</div>
-            <div className="text-xs opacity-60 mt-0.5">{p.desc}</div>
-            {p.id === 'moonpay' && (
-              <span className="block text-[10px] font-semibold text-yellow-400/90 mt-0.5">
-                Disponible pronto
-              </span>
-            )}
-          </button>
-        ))}
+      {/* Only crypto — NowPayments */}
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl w-fit">
+        <span className="text-lg">🪙</span>
+        <div>
+          <span className="text-white text-sm font-semibold">{t.cryptoPayment}</span>
+          <span className="text-white/50 text-xs ml-2">{t.cryptoDesc}</span>
+        </div>
       </div>
 
       {/* Packages */}
@@ -79,20 +106,17 @@ export function CreditPackages({ onSuccess }: CreditPackagesProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
+            className="relative"
           >
             <Card
-              className={`p-6 flex flex-col items-center gap-4 cursor-pointer transition-all duration-200 ${
-                'popular' in pkg && pkg.popular
-                  ? 'border-electric/60 bg-electric/10'
-                  : ''
-              }`}
+              className={`p-6 flex flex-col items-center gap-4 ${'popular' in pkg && pkg.popular ? 'border-electric/60 bg-electric/10' : ''}`}
               hover
               glow={'popular' in pkg && pkg.popular}
             >
               {'popular' in pkg && pkg.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                   <span className="px-3 py-1 bg-gradient-to-r from-electric to-deep text-white text-xs font-bold rounded-full">
-                    MÁS POPULAR
+                    {t.mostPopular}
                   </span>
                 </div>
               )}
@@ -101,24 +125,24 @@ export function CreditPackages({ onSuccess }: CreditPackagesProps) {
                 <div className="text-4xl font-black bg-gradient-to-r from-electric to-aqua bg-clip-text text-transparent">
                   {pkg.credits}
                 </div>
-                <div className="text-white/70 text-sm font-medium">créditos</div>
+                <div className="text-white/70 text-sm font-medium">{t.credits}</div>
               </div>
 
               <div className="text-center">
                 <div className="text-2xl font-bold text-white">{pkg.priceLabel}</div>
                 <div className="text-white/50 text-xs mt-1">
-                  ${(pkg.price / pkg.credits).toFixed(2)} por crédito
+                  ${(pkg.price / pkg.credits).toFixed(2)} {t.perCredit}
                 </div>
               </div>
 
               <Button
                 onClick={() => handlePurchase(pkg.credits)}
                 loading={loading === pkg.credits}
-                disabled={provider === 'moonpay'}
+                disabled={loading !== null && loading !== pkg.credits}
                 className="w-full"
                 variant={'popular' in pkg && pkg.popular ? 'primary' : 'secondary'}
               >
-                {provider === 'moonpay' ? 'Próximamente' : 'Comprar'}
+                {t.buy}
               </Button>
             </Card>
           </motion.div>
@@ -135,9 +159,7 @@ export function CreditPackages({ onSuccess }: CreditPackagesProps) {
         </motion.p>
       )}
 
-      <p className="text-white/40 text-xs text-center">
-        Pagos seguros. Los créditos se acreditan inmediatamente tras confirmación.
-      </p>
+      <p className="text-white/40 text-xs text-center">{t.securePayments}</p>
     </div>
   )
 }

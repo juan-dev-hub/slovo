@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { addCredits, savePago, pagoYaProcesado, isFirstPurchase, activateReferralLink, getUser } from '@/lib/db'
+import { addCredits, savePago, pagoYaProcesado, isFirstPurchase, activateReferralLink, getUser, pushNotification } from '@/lib/db'
 
 const COMPLETED_STATUSES = new Set(['confirmed', 'finished'])
 const USER_ID_PATTERN = /^user_[a-zA-Z0-9]+$/
@@ -72,7 +72,12 @@ export async function POST(req: NextRequest) {
 
     const user = await getUser(userId)
     if (user?.referido_por) {
-      await addCredits(user.referido_por, Math.ceil(credits * 0.2))
+      const bonus = Math.ceil(credits * 0.2)
+      await addCredits(user.referido_por, bonus)
+      await pushNotification(
+        user.referido_por,
+        `🎉 Un referido tuyo acaba de comprar un paquete de ${credits} créditos. ¡Recibiste ${bonus} créditos de bono (20%)!`
+      )
     }
 
     return NextResponse.json({ received: true, processed: true })

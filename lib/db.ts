@@ -183,4 +183,36 @@ export async function isFirstPurchase(clerkId: string): Promise<boolean> {
   return Number(result[0]?.total ?? 0) === 0
 }
 
+// ── Notifications ──────────────────────────────────────────────
+async function ensureNotificationsTable() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS notificaciones (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      usuario_id VARCHAR(255) NOT NULL REFERENCES usuarios(id),
+      mensaje TEXT NOT NULL,
+      leida BOOLEAN DEFAULT FALSE,
+      fecha TIMESTAMP DEFAULT NOW()
+    )
+  `
+}
+
+export async function pushNotification(userId: string, mensaje: string) {
+  await ensureNotificationsTable()
+  await sql`INSERT INTO notificaciones (usuario_id, mensaje) VALUES (${userId}, ${mensaje})`
+}
+
+export async function getPendingNotifications(userId: string) {
+  await ensureNotificationsTable()
+  return sql`
+    SELECT id, mensaje, fecha FROM notificaciones
+    WHERE usuario_id = ${userId} AND leida = FALSE
+    ORDER BY fecha DESC
+  `
+}
+
+export async function markNotificationsRead(userId: string) {
+  await ensureNotificationsTable()
+  await sql`UPDATE notificaciones SET leida = TRUE WHERE usuario_id = ${userId} AND leida = FALSE`
+}
+
 export { sql }
