@@ -1,4 +1,4 @@
-import Mistral from '@mistralai/mistralai'
+import OpenAI from 'openai'
 
 export interface ScriptSections {
   gancho: string
@@ -12,7 +12,6 @@ export interface ScriptSections {
   full: string
 }
 
-// Matches section headers with or without leading number, bold/markdown variants
 const HEADER_RE = /^[#*>\s_]*(?:\d+[.):\-]\s*)?[*_]*(GANCHO|PROBLEMA|SOLUC[IÍ][OÓ]N|PRUEBA|OFERTA|CIERRE|OBJECIONES|MANEJO\s+(?:DE\s+)?OBJECCI[OÓ]N)[*_\s]*:?$/i
 
 const KEYWORD_TO_KEY: Record<string, string> = {
@@ -39,7 +38,7 @@ function stripMarkdown(s: string): string {
 }
 
 function parseScriptSections(text: string): ScriptSections {
-  console.log('[Mistral raw output]\n', text.slice(0, 500))
+  console.log('[Grok raw output]\n', text.slice(0, 500))
 
   const v2Re = /VERSI[OÓ]N\s*2[:\-\s]*/i
   const v2Match = text.search(v2Re)
@@ -153,15 +152,18 @@ REGLA CRÍTICA: NUNCA digas que un competidor es malo, estafa, timo, o ilegal. S
 VERSIÓN 2: VERSIÓN HABLADA
 El script completo en lenguaje conversacional real. Como si estuvieras en una llamada o cara a cara. Fluido, con pausas marcadas con [pausa]. Incluye las 3 preguntas de rapport, apertura, presentación, prueba, manejo de cada objeción y cierre duro. El vendedor debe poder leerlo y decir: "así es exactamente como yo hablaría."`
 
-  const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY! })
-
-  const response = await client.chat.complete({
-    model: 'mistral-large-latest',
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.8,
-    maxTokens: 4500,
+  const client = new OpenAI({
+    apiKey: process.env.XAI_API_KEY,
+    baseURL: 'https://api.x.ai/v1',
   })
 
-  const text = (response.choices?.[0]?.message?.content as string) ?? ''
+  const response = await client.chat.completions.create({
+    model: 'grok-4.1-fast',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.8,
+    max_tokens: 4500,
+  })
+
+  const text = response.choices[0]?.message?.content ?? ''
   return parseScriptSections(text)
 }
