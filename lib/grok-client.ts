@@ -158,7 +158,7 @@ El script completo en lenguaje conversacional real. Como si estuvieras en una ll
   })
 
   const response = await client.chat.completions.create({
-    model: 'grok-4.1-fast',
+    model: 'grok-4-1-fast-non-reasoning',
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.8,
     max_tokens: 4500,
