@@ -9,12 +9,16 @@ interface FormData {
   producto: string
   nicho: string
   problema: string
+  puntosDolor: string
   resultado: string
+  granMentira: string
   precio: string
+  bonusAccion: string
   canal: string
   tono: string
-  nivelHype: number
   tipoCliente: string
+  tipoScript: string
+  nivelPresion: number
   prueba: string
   garantia: string
   urgencia: string
@@ -23,24 +27,30 @@ interface FormData {
 interface ScriptFormProps {
   onScriptGenerated: (data: {
     scriptId: string
-    gancho: string
-    problema: string
-    solucion: string
-    prueba: string
-    oferta: string
+    apertura: string
+    presentacion: string
+    manejoObjeciones: string
     cierre: string
-    manejoObjecion: string
-    versionHablada: string
+    loopObjeciones: string
+    tonality: string
     full: string
   }) => void
 }
 
+const tipoScriptOptions = [
+  { value: 'Llamada en frío',    label: '📞 Llamada en frío' },
+  { value: 'Warm call',          label: '🔥 Warm call' },
+  { value: 'WhatsApp',           label: '💬 WhatsApp' },
+  { value: 'VSL',                label: '🎬 VSL (Video Sales Letter)' },
+  { value: 'Página de ventas',   label: '🌐 Página de ventas' },
+]
+
 const canalOptions = [
-  { value: 'llamada telefónica', label: '📞 Llamada telefónica' },
-  { value: 'videollamada', label: '🎥 Videollamada' },
-  { value: 'email', label: '📧 Email' },
+  { value: 'llamada telefónica',    label: '📞 Llamada telefónica' },
+  { value: 'videollamada',          label: '🎥 Videollamada' },
+  { value: 'email',                 label: '📧 Email' },
   { value: 'mensaje directo (DM)', label: '💬 Mensaje Directo (DM)' },
-  { value: 'cara a cara', label: '🤝 Cara a cara / Presencial' },
+  { value: 'cara a cara',           label: '🤝 Cara a cara / Presencial' },
 ]
 
 const tonoOptions = [
@@ -60,12 +70,16 @@ export function ScriptForm({ onScriptGenerated }: ScriptFormProps) {
     producto: '',
     nicho: '',
     problema: '',
+    puntosDolor: '',
     resultado: '',
+    granMentira: '',
     precio: '',
+    bonusAccion: '',
     canal: '',
     tono: '',
-    nivelHype: 5,
     tipoCliente: '',
+    tipoScript: '',
+    nivelPresion: 5,
     prueba: '',
     garantia: '',
     urgencia: '',
@@ -74,7 +88,11 @@ export function ScriptForm({ onScriptGenerated }: ScriptFormProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const coreFields: (keyof FormData)[] = ['producto', 'nicho', 'problema', 'resultado', 'precio', 'canal', 'tono', 'tipoCliente']
+  const coreFields: (keyof FormData)[] = [
+    'producto', 'nicho', 'problema', 'puntosDolor',
+    'resultado', 'granMentira', 'precio', 'bonusAccion',
+    'canal', 'tono', 'tipoCliente', 'tipoScript',
+  ]
   const filledCore = coreFields.filter(f => String(form[f]).trim() !== '').length
   const filledObjeciones = objeciones.filter(o => o.trim() !== '').length
   const totalFields = coreFields.length + 1
@@ -83,7 +101,7 @@ export function ScriptForm({ onScriptGenerated }: ScriptFormProps) {
 
   function set(field: keyof FormData) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-      const val = field === 'nivelHype' ? Number(e.target.value) : e.target.value
+      const val = field === 'nivelPresion' ? Number(e.target.value) : e.target.value
       setForm(prev => ({ ...prev, [field]: val }))
     }
   }
@@ -152,6 +170,12 @@ export function ScriptForm({ onScriptGenerated }: ScriptFormProps) {
     visible: { opacity: 1, y: 0 },
   }
 
+  const presionLabel = form.nivelPresion <= 3
+    ? '— Consultivo, sin presión'
+    : form.nivelPresion <= 6
+    ? '— Firme y directo'
+    : '— Lobo de Wall Street'
+
   return (
     <Card className="p-8" glow>
       <motion.div variants={containerVariants} initial="hidden" animate="visible">
@@ -181,6 +205,16 @@ export function ScriptForm({ onScriptGenerated }: ScriptFormProps) {
             />
           </motion.div>
 
+          {/* Tipo de script */}
+          <motion.div variants={itemVariants} className="md:col-span-2">
+            <Select
+              label="Tipo de script"
+              options={tipoScriptOptions}
+              value={form.tipoScript}
+              onChange={set('tipoScript')}
+            />
+          </motion.div>
+
           {/* Problema y Resultado */}
           <motion.div variants={itemVariants} className="md:col-span-2">
             <Textarea
@@ -188,6 +222,16 @@ export function ScriptForm({ onScriptGenerated }: ScriptFormProps) {
               placeholder="Ej: No consiguen clientes nuevos y dependen del boca a boca"
               value={form.problema}
               onChange={set('problema')}
+              rows={3}
+            />
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="md:col-span-2">
+            <Textarea
+              label="Puntos de Dolor Extremos"
+              placeholder="Ej: Lleva 2 años sin crecer, ya intentó todo, siente que su negocio está muriendo y no sabe qué más hacer"
+              value={form.puntosDolor}
+              onChange={set('puntosDolor')}
               rows={3}
             />
           </motion.div>
@@ -202,7 +246,17 @@ export function ScriptForm({ onScriptGenerated }: ScriptFormProps) {
             />
           </motion.div>
 
-          {/* Precio y Canal */}
+          <motion.div variants={itemVariants} className="md:col-span-2">
+            <Textarea
+              label="La Gran Mentira de la Competencia"
+              placeholder="Ej: La competencia te dice que necesitas miles de seguidores para vender — eso es falso, solo necesitas el mensaje correcto"
+              value={form.granMentira}
+              onChange={set('granMentira')}
+              rows={3}
+            />
+          </motion.div>
+
+          {/* Precio, Canal, Bonus */}
           <motion.div variants={itemVariants}>
             <Input
               label="Precio de la oferta"
@@ -213,6 +267,15 @@ export function ScriptForm({ onScriptGenerated }: ScriptFormProps) {
           </motion.div>
 
           <motion.div variants={itemVariants}>
+            <Input
+              label="Bonus por Acción Inmediata"
+              placeholder="Ej: Sesión de estrategia gratis si decides hoy"
+              value={form.bonusAccion}
+              onChange={set('bonusAccion')}
+            />
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="md:col-span-2">
             <Select
               label="Canal de venta"
               options={canalOptions}
@@ -245,24 +308,22 @@ export function ScriptForm({ onScriptGenerated }: ScriptFormProps) {
             />
           </motion.div>
 
-          {/* Nivel de hype slider */}
+          {/* Nivel de presión de cierre */}
           <motion.div variants={itemVariants} className="md:col-span-2">
             <label className="block text-sm font-medium text-white/80 mb-2">
-              Nivel de hype &nbsp;
-              <span className="text-electric font-bold">{form.nivelHype}/10</span>
-              <span className="text-white/40 text-xs ml-2">
-                {form.nivelHype <= 3 ? '— Solo hechos y lógica' : form.nivelHype <= 6 ? '— Energía controlada' : '— Máxima urgencia'}
-              </span>
+              Nivel de presión de cierre &nbsp;
+              <span className="text-electric font-bold">{form.nivelPresion}/10</span>
+              <span className="text-white/40 text-xs ml-2">{presionLabel}</span>
             </label>
             <div className="flex items-center gap-3">
-              <span className="text-xs text-white/40">0</span>
+              <span className="text-xs text-white/40">1</span>
               <input
                 type="range"
-                min={0}
+                min={1}
                 max={10}
                 step={1}
-                value={form.nivelHype}
-                onChange={set('nivelHype')}
+                value={form.nivelPresion}
+                onChange={set('nivelPresion')}
                 className="flex-1 h-2 rounded-full appearance-none cursor-pointer accent-electric bg-white/10"
               />
               <span className="text-xs text-white/40">10</span>
@@ -311,7 +372,7 @@ export function ScriptForm({ onScriptGenerated }: ScriptFormProps) {
             <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-sm font-medium text-white/80">Objeciones del cliente</p>
-                <p className="text-xs text-white/40 mt-0.5">Agrega todas las que anticipes — la IA generará un loop de respuestas estilo línea recta.</p>
+                <p className="text-xs text-white/40 mt-0.5">Agrega todas las que anticipes — la IA generará un loop de respuestas estilo Straight Line.</p>
               </div>
               <span className="text-xs text-white/40">{objeciones.filter(o => o.trim()).length}/{objeciones.length}</span>
             </div>

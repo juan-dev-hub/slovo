@@ -7,14 +7,12 @@ import { CreditPackages } from './CreditPackages'
 
 interface ScriptData {
   scriptId: string
-  gancho: string
-  problema: string
-  solucion: string
-  prueba: string
-  oferta: string
+  apertura: string
+  presentacion: string
+  manejoObjeciones: string
   cierre: string
-  manejoObjecion: string
-  versionHablada: string
+  loopObjeciones: string
+  tonality: string
   full: string
 }
 
@@ -25,14 +23,12 @@ interface ScriptDisplayProps {
 }
 
 const SECTIONS = [
-  { key: 'gancho',         label: 'GANCHO',             emoji: '⚡', free: true  },
-  { key: 'problema',       label: 'PROBLEMA',            emoji: '🎯', free: true  },
-  { key: 'solucion',       label: 'SOLUCIÓN',            emoji: '💡', free: false },
-  { key: 'prueba',         label: 'PRUEBA',              emoji: '📊', free: false },
-  { key: 'oferta',         label: 'OFERTA',              emoji: '💰', free: false },
-  { key: 'cierre',         label: 'CIERRE',              emoji: '🔥', free: false },
-  { key: 'manejoObjecion', label: 'MANEJO DE OBJECIÓN',  emoji: '🛡️', free: false },
-  { key: 'versionHablada', label: 'VERSIÓN HABLADA',     emoji: '🗣️', free: false },
+  { key: 'apertura',          label: 'APERTURA',                    emoji: '⚡', free: true  },
+  { key: 'presentacion',      label: 'PRESENTACIÓN',                emoji: '🎯', free: false },
+  { key: 'manejoObjeciones',  label: 'MANEJO DE OBJECIONES',        emoji: '🛡️', free: false },
+  { key: 'cierre',            label: 'CIERRE',                      emoji: '🔥', free: false },
+  { key: 'loopObjeciones',    label: 'LOOP DE OBJECIONES',          emoji: '🔄', free: false },
+  { key: 'tonality',          label: 'RECOMENDACIÓN DE TONALITY',   emoji: '🎤', free: false },
 ]
 
 export function ScriptDisplay({ script, credits, onUnlocked }: ScriptDisplayProps) {
@@ -75,18 +71,16 @@ export function ScriptDisplay({ script, credits, onUnlocked }: ScriptDisplayProp
       doc.text(`Generado por SLOVO AI — ${new Date().toLocaleDateString('es-SV')}`, pageWidth / 2, y, { align: 'center' })
       y += 16
 
-      const sections = [
-        { title: '1. GANCHO', content: script.gancho },
-        { title: '2. PROBLEMA', content: script.problema },
-        { title: '3. SOLUCIÓN', content: script.solucion },
-        { title: '4. PRUEBA', content: script.prueba },
-        { title: '5. OFERTA', content: script.oferta },
-        { title: '6. CIERRE', content: script.cierre },
-        { title: '7. MANEJO DE OBJECIÓN', content: script.manejoObjecion },
-        { title: '8. VERSIÓN HABLADA', content: script.versionHablada },
+      const pdfSections = [
+        { title: '1. APERTURA',                  content: script.apertura },
+        { title: '2. PRESENTACIÓN',              content: script.presentacion },
+        { title: '3. MANEJO DE OBJECIONES',      content: script.manejoObjeciones },
+        { title: '4. CIERRE',                    content: script.cierre },
+        { title: '5. LOOP DE OBJECIONES',        content: script.loopObjeciones },
+        { title: '6. RECOMENDACIÓN DE TONALITY', content: script.tonality },
       ]
 
-      for (const section of sections) {
+      for (const section of pdfSections) {
         if (y > pageHeight - 40) {
           doc.addPage()
           doc.setFillColor(10, 15, 30)
@@ -132,7 +126,6 @@ export function ScriptDisplay({ script, credits, onUnlocked }: ScriptDisplayProp
     setUnlocking(true)
     setError('')
     try {
-      // Only send scriptId — content is stored server-side, never trusted from client
       const res = await fetch('/api/unlock-script', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -17,14 +17,12 @@ type Tab = 'generator' | 'history' | 'credits'
 
 interface GeneratedScript {
   scriptId: string
-  gancho: string
-  problema: string
-  solucion: string
-  prueba: string
-  oferta: string
+  apertura: string
+  presentacion: string
+  manejoObjeciones: string
   cierre: string
-  manejoObjecion: string
-  versionHablada: string
+  loopObjeciones: string
+  tonality: string
   full: string
 }
 

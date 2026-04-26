@@ -14,6 +14,7 @@ const ALLOWED_CANALES = [
 
 const ALLOWED_TONOS = ['agresivo', 'medio', 'suave']
 const ALLOWED_CLIENTES = ['escéptico', 'degen', 'corporativo']
+const ALLOWED_TIPO_SCRIPTS = ['Llamada en frío', 'Warm call', 'WhatsApp', 'VSL', 'Página de ventas']
 
 const MAX_FIELD_LENGTH = 500
 const MAX_OBJECIONES = 10
@@ -50,12 +51,16 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
 
-    const producto  = sanitizeText(body.producto)
-    const nicho     = sanitizeText(body.nicho)
-    const problema  = sanitizeText(body.problema)
-    const resultado = sanitizeText(body.resultado)
-    const precio    = sanitizeText(body.precio)
-    const canal     = typeof body.canal === 'string' && ALLOWED_CANALES.includes(body.canal.trim())
+    const producto    = sanitizeText(body.producto)
+    const nicho       = sanitizeText(body.nicho)
+    const problema    = sanitizeText(body.problema)
+    const puntosDolor = sanitizeText(body.puntosDolor)
+    const resultado   = sanitizeText(body.resultado)
+    const granMentira = sanitizeText(body.granMentira)
+    const precio      = sanitizeText(body.precio)
+    const bonusAccion = sanitizeText(body.bonusAccion)
+
+    const canal = typeof body.canal === 'string' && ALLOWED_CANALES.includes(body.canal.trim())
       ? body.canal.trim()
       : null
 
@@ -63,12 +68,16 @@ export async function POST(req: NextRequest) {
       ? body.tono.trim()
       : null
 
-    const nivelHype = typeof body.nivelHype === 'number' && body.nivelHype >= 0 && body.nivelHype <= 10
-      ? Math.round(body.nivelHype)
-      : null
-
     const tipoCliente = typeof body.tipoCliente === 'string' && ALLOWED_CLIENTES.includes(body.tipoCliente.trim())
       ? body.tipoCliente.trim()
+      : null
+
+    const tipoScript = typeof body.tipoScript === 'string' && ALLOWED_TIPO_SCRIPTS.includes(body.tipoScript.trim())
+      ? body.tipoScript.trim()
+      : null
+
+    const nivelPresion = typeof body.nivelPresion === 'number' && body.nivelPresion >= 1 && body.nivelPresion <= 10
+      ? Math.round(body.nivelPresion)
       : null
 
     if (!Array.isArray(body.objeciones) || body.objeciones.length === 0) {
@@ -87,17 +96,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Objeciones inválidas o vacías' }, { status: 400 })
     }
 
-    const prueba    = sanitizeOptional(body.prueba)
-    const garantia  = sanitizeOptional(body.garantia)
-    const urgencia  = sanitizeOptional(body.urgencia)
+    const prueba   = sanitizeOptional(body.prueba)
+    const garantia = sanitizeOptional(body.garantia)
+    const urgencia = sanitizeOptional(body.urgencia)
 
-    if (!producto || !nicho || !problema || !resultado || !precio || !canal || !tono || nivelHype === null || !tipoCliente) {
+    if (
+      !producto || !nicho || !problema || !puntosDolor || !resultado ||
+      !granMentira || !precio || !bonusAccion || !canal || !tono ||
+      !tipoCliente || !tipoScript || nivelPresion === null
+    ) {
       return NextResponse.json({ error: 'Campos inválidos o faltantes' }, { status: 400 })
     }
 
     const sections = await generateSalesScript({
-      producto, nicho, problema, resultado, precio, canal,
-      objeciones, prueba, garantia, urgencia, tono, nivelHype, tipoCliente,
+      producto, nicho, problema, puntosDolor, resultado, granMentira,
+      precio, bonusAccion, canal, objeciones, prueba, garantia, urgencia,
+      tipoScript, tono, tipoCliente, nivelPresion,
     })
 
     const script = await saveScript({
@@ -114,16 +128,14 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json({
-      scriptId: script.id,
-      gancho: sections.gancho,
-      problema: sections.problema,
-      solucion: sections.solucion,
-      prueba: sections.prueba,
-      oferta: sections.oferta,
-      cierre: sections.cierre,
-      manejoObjecion: sections.manejoObjecion,
-      versionHablada: sections.versionHablada,
-      full: sections.full,
+      scriptId:         script.id,
+      apertura:         sections.apertura,
+      presentacion:     sections.presentacion,
+      manejoObjeciones: sections.manejoObjeciones,
+      cierre:           sections.cierre,
+      loopObjeciones:   sections.loopObjeciones,
+      tonality:         sections.tonality,
+      full:             sections.full,
     })
   } catch (err: any) {
     console.error('[generate error]', err)
