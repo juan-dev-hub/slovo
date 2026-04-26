@@ -58,15 +58,15 @@ async function buildDodoUrl(pkg: typeof CREDIT_PACKAGES[number], userId: string,
   const apiKey = process.env.DODO_API_KEY
   if (!apiKey) throw new Error('Dodo: falta DODO_API_KEY en Vercel')
 
-  const r = await fetch('https://api.dodopayments.com/payments', {
+  const r = await fetch('https://live.dodopayments.com/payments', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      billing: { city: '-', country: 'US', state: '-', street: '-' },
-      customer: { customer_id: userId },
+      billing: { city: 'N/A', country: 'US', state: 'N/A', street: 'N/A', zipcode: 0 },
+      customer: { email: 'customer@checkout.com', name: 'Customer' },
       metadata: { userId, credits: String(pkg.credits) },
       payment_link: true,
       product_cart: [{ product_id: pkg.dodoProductId, quantity: 1 }],
@@ -74,7 +74,7 @@ async function buildDodoUrl(pkg: typeof CREDIT_PACKAGES[number], userId: string,
     }),
   })
   const data = await r.json()
-  if (!data.payment_link) throw new Error(`Dodo no retornó URL de pago: ${JSON.stringify(data)}`)
+  if (!data.payment_link) throw new Error(`Dodo error: ${JSON.stringify(data)}`)
   return data.payment_link as string
 }
 
