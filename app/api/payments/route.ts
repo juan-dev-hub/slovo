@@ -4,7 +4,7 @@ import { CREDIT_PACKAGES } from '@/lib/utils'
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import crypto from 'crypto'
 
-type Provider = 'nowpayments' | 'moonpay' | 'helio'
+type Provider = 'nowpayments' | 'moonpay' | 'helio' | 'dodo'
 
 async function buildNowPaymentsUrl(pkg: typeof CREDIT_PACKAGES[number], userId: string, appUrl: string) {
   const orderId = `${userId}|${pkg.credits}|${Date.now()}`
@@ -54,6 +54,30 @@ function buildMoonPayUrl(pkg: typeof CREDIT_PACKAGES[number], userId: string, ap
   return `https://buy.moonpay.com?${params.toString()}`
 }
 
+async function buildDodoUrl(pkg: typeof CREDIT_PACKAGES[number], userId: string, appUrl: string) {
+  const apiKey = process.env.DODO_API_KEY
+  if (!apiKey) throw new Error('Dodo: falta DODO_API_KEY en Vercel')
+
+  const r = await fetch('https://api.dodopayments.com/payments', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      billing: { city: '-', country: 'US', state: '-', street: '-' },
+      customer: { customer_id: userId },
+      metadata: { userId, credits: String(pkg.credits) },
+      payment_link: true,
+      product_cart: [{ product_id: pkg.dodoProductId, quantity: 1 }],
+      return_url: `${appUrl}/payment-done`,
+    }),
+  })
+  const data = await r.json()
+  if (!data.payment_link) throw new Error(`Dodo no retornó URL de pago: ${JSON.stringify(data)}`)
+  return data.payment_link as string
+}
+
 function buildHelioUrl(pkg: typeof CREDIT_PACKAGES[number], userId: string, appUrl: string) {
   const paylinkId = process.env.HELIO_PAYLINK_ID
   if (!paylinkId) throw new Error('Helio: falta HELIO_PAYLINK_ID en Vercel')
@@ -88,6 +112,8 @@ export async function POST(req: NextRequest) {
       checkoutUrl = buildMoonPayUrl(pkg, userId, appUrl)
     } else if (provider === 'helio') {
       checkoutUrl = buildHelioUrl(pkg, userId, appUrl)
+    } else if (provider === 'dodo') {
+      checkoutUrl = await buildDodoUrl(pkg, userId, appUrl)
     } else {
       checkoutUrl = await buildNowPaymentsUrl(pkg, userId, appUrl)
     }

@@ -6,6 +6,8 @@ import { Button } from './ui/Button'
 import { CREDIT_PACKAGES } from '@/lib/utils'
 import { useLanguage } from '@/contexts/LanguageContext'
 
+type PaymentMethod = 'crypto' | 'card'
+
 interface CreditPackagesProps {
   onSuccess?: (newCredits: number) => void
   onToast?: (msg: string) => void
@@ -13,13 +15,13 @@ interface CreditPackagesProps {
 
 export function CreditPackages({ onSuccess, onToast }: CreditPackagesProps) {
   const { t } = useLanguage()
+  const [method, setMethod] = useState<PaymentMethod>('card')
   const [loading, setLoading] = useState<number | null>(null)
   const [error, setError] = useState('')
   const popupRef = useRef<Window | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const baseCreditsRef = useRef<number | null>(null)
 
-  // Listen for payment_complete message from popup
   useEffect(() => {
     function onMessage(e: MessageEvent) {
       if (e.origin !== window.location.origin) return
@@ -38,7 +40,6 @@ export function CreditPackages({ onSuccess, onToast }: CreditPackagesProps) {
   function startPolling(baseCredits: number) {
     baseCreditsRef.current = baseCredits
     pollRef.current = setInterval(async () => {
-      // Stop if popup was closed manually
       if (popupRef.current?.closed) { stopPolling(); return }
       try {
         const res = await fetch('/api/credits')
@@ -57,25 +58,25 @@ export function CreditPackages({ onSuccess, onToast }: CreditPackagesProps) {
     setLoading(credits)
     setError('')
     try {
-      // Snapshot current credits before payment
       const creditRes = await fetch('/api/credits')
       const { credits: currentCredits } = creditRes.ok ? await creditRes.json() : { credits: 0 }
 
+      const provider = method === 'card' ? 'dodo' : 'nowpayments'
       const res = await fetch('/api/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credits, provider: 'nowpayments' }),
+        body: JSON.stringify({ credits, provider }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || t.paymentError)
 
+      const popupName = method === 'card' ? 'dodo_checkout' : 'nowpayments_checkout'
       const popup = window.open(
         data.checkoutUrl,
-        'nowpayments_checkout',
+        popupName,
         'width=820,height=700,left=200,top=100,resizable=yes,scrollbars=yes'
       )
       if (!popup) {
-        // Popup blocked — fall back to redirect
         window.location.href = data.checkoutUrl
         return
       }
@@ -89,13 +90,50 @@ export function CreditPackages({ onSuccess, onToast }: CreditPackagesProps) {
 
   return (
     <div className="space-y-5">
-      {/* Only crypto — NowPayments */}
+
+      {/* Payment method toggle */}
+      <div className="flex gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/10 w-fit">
+        <button
+          onClick={() => setMethod('card')}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${
+            method === 'card'
+              ? 'bg-gradient-to-r from-electric to-deep text-white shadow-lg shadow-electric/20'
+              : 'text-white/60 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          💳 Tarjeta
+        </button>
+        <button
+          onClick={() => setMethod('crypto')}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${
+            method === 'crypto'
+              ? 'bg-gradient-to-r from-electric to-deep text-white shadow-lg shadow-electric/20'
+              : 'text-white/60 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          🪙 Crypto
+        </button>
+      </div>
+
+      {/* Method description */}
       <div className="flex items-center gap-2 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl w-fit">
-        <span className="text-lg">🪙</span>
-        <div>
-          <span className="text-white text-sm font-semibold">{t.cryptoPayment}</span>
-          <span className="text-white/50 text-xs ml-2">{t.cryptoDesc}</span>
-        </div>
+        {method === 'card' ? (
+          <>
+            <span className="text-lg">💳</span>
+            <div>
+              <span className="text-white text-sm font-semibold">Tarjeta de crédito / débito</span>
+              <span className="text-white/50 text-xs ml-2">Visa, Mastercard, Amex</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <span className="text-lg">🪙</span>
+            <div>
+              <span className="text-white text-sm font-semibold">{t.cryptoPayment}</span>
+              <span className="text-white/50 text-xs ml-2">{t.cryptoDesc}</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Packages */}
@@ -142,7 +180,7 @@ export function CreditPackages({ onSuccess, onToast }: CreditPackagesProps) {
                 className="w-full"
                 variant={'popular' in pkg && pkg.popular ? 'primary' : 'secondary'}
               >
-                {t.buy}
+                {method === 'card' ? '💳' : '🪙'} {t.buy}
               </Button>
             </Card>
           </motion.div>

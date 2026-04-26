@@ -16,9 +16,9 @@ export function validateWompiWebhook(payload: string, signature: string, secret:
 }
 
 export const CREDIT_PACKAGES = [
-  { credits: 10, price: 15, label: '10 créditos', priceLabel: '$15.00' },
-  { credits: 25, price: 25, label: '25 créditos', priceLabel: '$25.00', popular: true },
-  { credits: 50, price: 35, label: '50 créditos', priceLabel: '$35.00' },
+  { credits: 10, price: 15, label: '10 créditos', priceLabel: '$15.00', dodoProductId: 'pdt_0NdYwwcBdl53BrLeb9Kx3' },
+  { credits: 25, price: 25, label: '25 créditos', priceLabel: '$25.00', popular: true, dodoProductId: 'pdt_0NdYxCGKisX80sQu8uYD4' },
+  { credits: 50, price: 35, label: '50 créditos', priceLabel: '$35.00', dodoProductId: 'pdt_0NdYxLmnKoFGDWHDP5umZ' },
 ] as const
 
 export function getCreditPackageByAmount(monto: number) {
