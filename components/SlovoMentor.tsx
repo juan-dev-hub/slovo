@@ -11,6 +11,7 @@ interface MentorResult {
   punto3: string
   cierre: string
   full: string
+  modoHook: boolean
 }
 
 const SECTIONS = [
@@ -250,8 +251,17 @@ export function SlovoMentor() {
             {/* Preview header */}
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-white">Vista Previa — Clase Magistral</h2>
-                <p className="text-white/50 text-sm mt-0.5">{tema} · {nivelAudiencia}</p>
+                <div className="flex items-center gap-3 mb-1">
+                  <h2 className="text-xl font-bold text-white">
+                    Vista Previa — {result.modoHook ? 'Hook de Empoderamiento' : 'Clase Magistral'}
+                  </h2>
+                  {result.modoHook && (
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-400 tracking-wide">
+                      🎣 MODO HOOK
+                    </span>
+                  )}
+                </div>
+                <p className="text-white/50 text-sm">{tema} · {nivelAudiencia}</p>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setResult(null)}>
                 ← Nueva clase
