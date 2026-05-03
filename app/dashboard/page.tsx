@@ -8,12 +8,13 @@ import { ScriptForm } from '@/components/ScriptForm'
 import { ScriptDisplay } from '@/components/ScriptDisplay'
 import { ScriptHistory } from '@/components/ScriptHistory'
 import { CreditPackages } from '@/components/CreditPackages'
+import { SlovoMentor } from '@/components/SlovoMentor'
 import { Toast, ToastItem } from '@/components/Toast'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { useLanguage } from '@/contexts/LanguageContext'
 
-type Tab = 'generator' | 'history' | 'credits'
+type Tab = 'generator' | 'mentor' | 'history' | 'credits'
 
 interface GeneratedScript {
   scriptId: string
@@ -124,6 +125,7 @@ export default function DashboardPage() {
 
   const tabs = [
     { id: 'generator' as Tab, label: t.tabGenerator },
+    { id: 'mentor' as Tab, label: t.tabMentor },
     { id: 'history' as Tab, label: t.tabHistory },
     { id: 'credits' as Tab, label: t.tabCredits },
   ]
@@ -202,6 +204,12 @@ export default function DashboardPage() {
                     <ScriptDisplay script={currentScript} credits={userData?.creditos ?? 0} onUnlocked={handleUnlocked} />
                   </div>
                 )}
+              </motion.div>
+            )}
+
+            {tab === 'mentor' && (
+              <motion.div key="mentor" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+                <SlovoMentor />
               </motion.div>
             )}
 
